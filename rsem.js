@@ -21,7 +21,7 @@ function assemble(){
         STAC : "2",
         MVAC : "3",
         MOVR : "4",
-        JUMP : "5",
+        JMP : "5",
         JMPZ : "6",
         OUT : "7",
         SUB : "8",
@@ -123,7 +123,7 @@ const ins = {
     STAC : 2,
     MVAC : 3,
     MOVR : 4,
-    JUMP : 5,
+    JMP : 5,
     JMPZ : 6,
     OUT : 7,
     SUB : 8,
@@ -355,11 +355,11 @@ let rsc = {
                 ;
             }
             break;
-            //JUMP
-        case ins.JUMP:
+            //JMP
+        case ins.JMP:
             switch(this.component.SC){
             case 3:
-                this.add_to_trace("JUMP");
+                this.add_to_trace("JMP");
                 this.component.DR = this.component.M[this.component.PC];
                 break;
             case 4:
