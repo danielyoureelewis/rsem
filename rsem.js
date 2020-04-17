@@ -176,7 +176,6 @@ let rsc = {
         this.dump_mem();
         this.reset_output();
         this.enable_run();
-        console.log(this.code);
     },
 
     enable_run : function() {
@@ -217,16 +216,16 @@ let rsc = {
     print_debug : function() {
         document.getElementById('debug').innerHTML =
             'REGISTERS:<br>' +
-            'AR   = ' + this.component.AR + '<br>' +
-            'IR   = ' + this.component.IR + '<br>' +
-            'OUTR = ' + this.component.OUTR + '<br>' +
-            'DR   = ' + this.component.DR + '<br>' + 
-            'R    = ' + this.component.R + '<br>' +
-            'ACC  = ' + this.component.ACC + '<br>' +
-            'PC   = ' + this.component.PC + '<br>' +
-            'S    = ' + this.component.S + '<br>' +
-            'Z    = ' + this.component.Z + '<br>' +
-            'SC   = ' + this.component.SC + '<br>';
+            'AR   = ' + this.component.AR.toString(16) + '<br>' +
+            'IR   = ' + this.component.IR.toString(16) + '<br>' +
+            'OUTR = ' + this.component.OUTR.toString(16) + '<br>' +
+            'DR   = ' + this.component.DR.toString(16) + '<br>' + 
+            'R    = ' + this.component.R.toString(16) + '<br>' +
+            'ACC  = ' + this.component.ACC.toString(16) + '<br>' +
+            'PC   = ' + this.component.PC.toString(16) + '<br>' +
+            'S    = ' + this.component.S.toString(16) + '<br>' +
+            'Z    = ' + this.component.Z.toString(16) + '<br>' +
+            'SC   = ' + this.component.SC.toString(16) + '<br>';
     },
 
     add_to_trace : function(elem){
@@ -252,7 +251,7 @@ let rsc = {
             }
         });
     },
-
+    
     T : function(){
         switch(this.component.SC){
         case 0:
@@ -521,7 +520,7 @@ let rsc = {
             }                
             break;
         }
-        this.component.SC = ++this.component.SC % 8;
+        this.component.SC++;
     },
     
     //should be called each time ACC is modified
@@ -571,8 +570,7 @@ let rsc = {
         }
         this.print_debug();
         this.dump_mem();
-        document.getElementById('output').innerHTML = 'OUTPUT: ' + this.component.OUTR;
-
+        document.getElementById('output').innerHTML = 'OUTPUT: ' + this.component.OUTR.toString(16);
     },
     //rsc functions
     run : function() {
