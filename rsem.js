@@ -33,8 +33,22 @@ function assemble(){
         ASHR : "E",
         NOT : "F"
     };
-
+    
     let label = {};
+    let err = {
+        iserr : false,
+        problem : [],
+        print : function(problem){
+            this.iserr = true;
+            this.problem.push(problem);
+            document.getElementById('display').innerHTML = '';
+            this.problem.forEach((p) => {
+                console.log(p)
+                document.getElementById('display').innerHTML += p + '<br>';
+            });
+        }
+    };
+    
     //reads the text from the user
     function read(){
         return document.getElementById('asminput').value
@@ -57,13 +71,15 @@ function assemble(){
     }
     //print the assembled program
     function print_code(code){
+        if(err.iserr){
+            return
+        }
         let codeprompt = "CODE";
-        let codediv = document.getElementById('codeTitle').innerHTML;
+        let codediv = document.getElementById('codeTitle').innerHTML;        
         if(codeprompt != codediv.split(":")[0]){
             document.getElementById('codeTitle').innerHTML = codeprompt+':';
             document.getElementById('codeTitle').innerHTML += codediv;
         }
-
         document.getElementById('pos').innerHTML = 'N:<br>';
         document.getElementById('code').innerHTML = '';
         code.forEach((line, index) => {
@@ -71,33 +87,61 @@ function assemble(){
             document.getElementById('code').innerHTML += pad(line.toString(16),8) + '<br>';
         });
     }
+
+    function prepare_display(){
+        document.getElementById('display').innerHTML = '';
+        document.getElementById('display').innerHTML = '<div class="col-sm-1" id="pos"></div><div class="col-sm-2" id="codeTitle"><div id="code"></div></div><div class="col-sm-2" id="mem"></div><div class="col-sm-2" id="debug"></div><div class="col-sm-2" id="trace"></div><div class="col-sm-2" id="output"></div>'
+    }
+    
     //translate assembly to opcodes and data
     //we'll do 2 passes:
     //first pass will define labels
     //second pass will resolve lables
     function translate(asm){
         let mem = [];
+        let error = 0;
         asm.forEach((x, index) => {
-            let line = x.split(' ');
-            //either the line is a lable or an instruction
+            //this fixes the case that labels are not in this form label: N and splits lines on whitespacep
+            let line = x.replace(/\s\s+:/g, ': ').split(' ');            
+            //either first element in the line is a lable or an instruction
             //line is an instruction
             if(line[0] in instruction){
                 mem.push(instruction[line[0]]);
                 //we could probably assume one item here
                 for(let i = 1; i < line.length; i++){
+                    if(line[i].includes(':')){
+                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' You cannot define a label here. It must be on the left hand side.');
+                    }
+                    if(line[i] in instruction){
+                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' Do not use an instruction as a value or destination.');
+                    }
+
                     mem.push(line[i]);                    
                 }
             //line is a lable
-            }else{
+            }else if(line[0].includes(':')){
+                let labelname = line[0].replace(':', '');
+                if(labelname in instruction){
+                    err.print('ERROR: \"' + line[0] + '\" on line ' + index + ' Instruction name used as label.');
+                }
                 //remember where the lable is
-                label[line[0].replace(":", '')] = mem.length;
+                label[labelname] = mem.length;
                 //we could probably assume one item here
                 for(let i = 1; i < line.length; i++){
-                    mem.push(line[i]);                    
+                    if(line[i].includes(':')){
+                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' You cannot define a label here. It must be on the left hand side.');
+                    }
+                    if(line[i] in instruction){
+                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' Do not use an instruction as a value or destination.');
+                    }
+                    mem.push(line[i]);
                 }
+            //bad input
+            }else{
+                err.print('ERROR: \"' + line[0] + '\" on line ' + index + ' is neither a label or an instruction. Did you forget a colon, or mistype an instruction name?');
+                error = 1;
             }
         });
-
         //this is going to mutate mem in place rather than make a new arr.
         //user inputs numbers in hex
         mem.forEach((x, index) => {
@@ -106,15 +150,29 @@ function assemble(){
                 mem[index] = label[x];
             }
             else{
-                //parse hex
-                mem[index] = parseInt(mem[index], 16);                
+                try {
+                    //parse hex
+                    mem[index] = parseInt(mem[index], 16);                
+                }catch(error){
+                    err.print('ERROR: unknown error. Tried to parse an integer and failed. See console for more info.');
+                    console.log(error);
+                }
             }
-        })
-        rsc.codelen = mem;
-        print_code(mem);
+        });
         return mem;
     }
-    return translate(sanitize(read()));
+    //clear display 
+    prepare_display();
+    //process asm
+    asm = translate(sanitize(read()));
+    //if error return empty list
+    if(err.iserr){
+        return []
+    //code was fine 
+    }else{
+        print_code(asm);            
+        return asm;
+    }
 }
 
 const ins = {
@@ -160,6 +218,7 @@ let rsc = {
     },
 
     reset : function(){
+        this.reset_trace();
         this.component.AR = 0;
         this.component.IR = 0;
         this.component.OUTR = 0;
@@ -170,12 +229,15 @@ let rsc = {
         this.component.S = 0;
         this.component.Z = 0;
         this.component.SC = 0;
-        this.component.M = Array.from(this.code);
+        this.component.M = assemble();;
         this.print_debug();
-        this.reset_trace();
         this.dump_mem();
         this.reset_output();
-        this.enable_run();
+        if(this.component.M.length){
+            this.enable_run();
+            this.enable_asm();
+            this.codelen = this.component.M.length;
+        }
     },
 
     enable_run : function() {
@@ -230,8 +292,8 @@ let rsc = {
 
     add_to_trace : function(elem){
         let trace = document.getElementById('trace').innerHTML;
-        if(trace === ''){
-            document.getElementById('trace').innerHTML = 'TRACE:<br>';
+        if(trace == ''){
+            document.getElementById('trace').innerHTML = 'TRACE:<br>' + elem + '<br>';
         }else{
             document.getElementById('trace').innerHTML += elem + '<br>';
         }
@@ -273,6 +335,7 @@ let rsc = {
             case 3:
                 this.add_to_trace("HALT");
                 this.component.S = 1;
+                this.component.SC = -1;
                 break;
             default:
                 ;
@@ -537,7 +600,7 @@ let rsc = {
     _step : function(){
         if(!this.stepcnt){
             //load
-            this.component.M = Array.from(this.code);
+            this.component.M = assemble();;
             //remember the length of the original code
             this.codelen = this.component.M.length;
         }
