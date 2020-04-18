@@ -13,10 +13,10 @@
     <textarea class="form-control" style="width: 100%; height: 50%;" type="text" id="asminput"></textarea>
     <div class="row justify-content-center">
       
-      <button type="button" class="btn btn-outline-primary mybtn" id="asm" onclick="rsc.reset()" >Build</button>
+      <button type="button" class="btn btn-outline-primary mybtn" id="asm" onclick="rsc.load(assemble())" >Build</button>
 
       <button type="button" class="btn btn-outline-primary mybtn" id="copy" onclick="copyDivToClipboard()" disabled>Copy</button>
-
+      
       <button  type="button" class="btn btn-outline-primary mybtn" id="tstep" onclick="rsc.step()" disabled>T++</button>
 
       <button  type="button" class="btn btn-outline-primary mybtn" id="ins" id="ins" onclick="rsc.ins()" disabled>Ins.</button>

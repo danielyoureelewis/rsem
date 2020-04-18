@@ -217,6 +217,11 @@ let rsc = {
         M : [],
     },
 
+    load : function(input){
+        this.code = Array.from(input);
+        this.reset();
+    },
+    
     reset : function(){
         this.reset_trace();
         this.component.AR = 0;
@@ -229,7 +234,7 @@ let rsc = {
         this.component.S = 0;
         this.component.Z = 0;
         this.component.SC = 0;
-        this.component.M = assemble();;
+        this.component.M = Array.from(this.code);
         this.print_debug();
         this.dump_mem();
         this.reset_output();
@@ -600,7 +605,7 @@ let rsc = {
     _step : function(){
         if(!this.stepcnt){
             //load
-            this.component.M = assemble();;
+            this.component.M = Array.from(this.code);
             //remember the length of the original code
             this.codelen = this.component.M.length;
         }
