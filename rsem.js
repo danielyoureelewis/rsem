@@ -1,5 +1,10 @@
 //Daniel Lewis 2020
 'use strict';
+var editor
+function initialize(){
+    editor = ace.edit("editor");
+}
+
 function copyDivToClipboard() {
     var range = document.createRange();
     range.selectNode(document.getElementById("code"));
@@ -51,7 +56,7 @@ function assemble(){
     
     //reads the text from the user
     function read(){
-        return document.getElementById('asminput').value
+        return editor.getValue(); // or session.getValue
     }
     //remove the comments and empty lines
     //returns a list delimited by newline
@@ -110,10 +115,12 @@ function assemble(){
                 //we could probably assume one item here
                 for(let i = 1; i < line.length; i++){
                     if(line[i].includes(':')){
-                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' You cannot define a label here. It must be on the left hand side.');
+                        let ln = index + 1;
+                        err.print('ERROR: line ' + ln + ': \"' + line[i] + '\" You cannot define a label here. It must be on the left hand side.');
                     }
                     if(line[i] in instruction){
-                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' Do not use an instruction as a value or destination.');
+                        let ln = index + 1
+                        err.print('ERROR: line ' + ln + ': \"' + line[i] + '\" Do not use an instruction as a value or destination.');
                     }
 
                     mem.push(line[i]);                    
@@ -122,23 +129,27 @@ function assemble(){
             }else if(line[0].includes(':')){
                 let labelname = line[0].replace(':', '');
                 if(labelname in instruction){
-                    err.print('ERROR: \"' + line[0] + '\" on line ' + index + ' Instruction name used as label.');
+                    let ln = index + 1
+                    err.print('ERROR: line ' + ln + ': \"' + line[0] + '\" Instruction name used as label.');
                 }
                 //remember where the lable is
                 label[labelname] = mem.length;
                 //we could probably assume one item here
                 for(let i = 1; i < line.length; i++){
                     if(line[i].includes(':')){
-                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' You cannot define a label here. It must be on the left hand side.');
+                        let ln = index + 1
+                        err.print('ERROR: line ' + ln + ': \"' + line[0] + '\" You cannot define a label here. It must be on the left hand side.');
                     }
                     if(line[i] in instruction){
-                        err.print('ERROR: \"' + line[i] + '\" on line ' + index + ' Do not use an instruction as a value or destination.');
+                        let ln = index + 1
+                        err.print('ERROR: line ' + ln + ': \"' + line[i] + '\" Do not use an instruction as a value or destination.');
                     }
                     mem.push(line[i]);
                 }
             //bad input
             }else{
-                err.print('ERROR: \"' + line[0] + '\" on line ' + index + ' is neither a label or an instruction. Did you forget a colon, or mistype an instruction name?');
+                let ln = index+1
+                err.print('ERROR: line ' + ln + ': \"' + line[0] + '\" is neither a label or an instruction. Did you forget a colon, or mistype an instruction name?');
                 error = 1;
             }
         });
@@ -219,7 +230,11 @@ let rsc = {
 
     load : function(input){
         this.code = Array.from(input);
-        this.reset();
+        if(this.code.length){
+            this.reset();
+        }else{
+            this.disable_copy();
+        }
     },
     
     reset : function(){
@@ -238,10 +253,11 @@ let rsc = {
         this.print_debug();
         this.dump_mem();
         this.reset_output();
+        this.codelen = this.component.M.length;
+
         if(this.component.M.length){
             this.enable_run();
             this.enable_asm();
-            this.codelen = this.component.M.length;
         }
     },
 
@@ -271,7 +287,11 @@ let rsc = {
         document.getElementById("asm").disabled = true;
         document.getElementById("copy").disabled = true;
     },
-    
+
+    disable_copy : function() {
+        document.getElementById("copy").disabled = true;
+    },
+
     _stop : function() {
         this.stopped = 1;
     },
@@ -311,11 +331,10 @@ let rsc = {
     dump_mem : function(){
         let mem = document.getElementById('mem').innerHTML;
         document.getElementById('mem').innerHTML = 'MEMORY:<br>';
+        document.getElementById('pos').innerHTML = 'N:<br>';
         this.component.M.forEach((x, i) => {
             document.getElementById('mem').innerHTML += pad(x.toString(16),8) + '<br>';
-            if(i >= this.codelen){
-                document.getElementById('pos').innerHTML += i + ':<br>';
-            }
+            document.getElementById('pos').innerHTML += i + ':<br>';
         });
     },
     
@@ -638,7 +657,7 @@ let rsc = {
         }
         this.print_debug();
         this.dump_mem();
-        document.getElementById('output').innerHTML = 'OUTPUT: ' + this.component.OUTR.toString(16);
+        document.getElementById('output').innerHTML = 'OUTPUT:<br>' + this.component.OUTR.toString(16);
     },
     //rsc functions
     run : function() {
