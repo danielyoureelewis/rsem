@@ -6,29 +6,31 @@
     <script src=rsem.js></script>
 
 </head>
-  <body>
+  <body class="body">
     <div id="editor"></div>
     <script onload="initialize()" src="ace-builds-master/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-
-    <div class="row justify-content-center btnrow">
+    <div class="btnrow row ">
       <button type="button" class="btn btn-outline-primary mybtn" id="asm" onclick="rsc.load(assemble())" >Build</button>
       <button type="button" class="btn btn-outline-primary mybtn" id="copy" onclick="copyDivToClipboard()" disabled>Copy</button>
-      <button  type="button" class="btn btn-outline-primary mybtn" id="tstep" onclick="rsc.step()" disabled>T++</button>
-      <button  type="button" class="btn btn-outline-primary mybtn" id="ins" id="ins" onclick="rsc.ins()" disabled>Ins.</button>
-      <button type="button" class="btn btn-outline-primary mybtn" id="run" onclick="rsc.run()" disabled>Run</button>
-      <button type="button" class="btn btn-outline-primary mybtn" id="stop" onclick="rsc.stop()" disabled>Stop</button>
-    </div>
-    <div id="display" class="row justify-content-center display">
-      <div class="col-sm-1" id="pos"></div>
+      <button  type="button" class="btn btn-outline-primary mybtn" id="prevstep" onclick="control.prev_step(rsc)" disabled>Prev. Micro</button>
+      <button  type="button" class="btn btn-outline-primary mybtn" id="tstep" onclick="control.step(rsc)" disabled>Next Micro</button>
+      <button  type="button" class="btn btn-outline-primary mybtn" id="previns" onclick="control.prev_ins(rsc)" disabled>Prev. Ins.</button>
+      <button  type="button" class="btn btn-outline-primary mybtn" id="ins" id="ins" onclick="control.ins(rsc)" disabled>Next Ins.</button>
+      <button type="button" class="btn btn-outline-primary mybtn" id="run" onclick="control.run(rsc)" disabled>Run</button>
+      <button type="button" class="btn btn-outline-primary mybtn" id="stop" onclick="control.stop(rsc)" disabled>Stop</button>
+
+    <div id="display" class="display row">
+      <div class="col-sm-1" id="pos"><br></div>
       <div class="col-sm-2" id="codeTitle">
-        <div id="code"></div>
+        <div id="code"><br></div>
       </div>
-      <div class="col-sm-2" id="mem"></div>
-      <div class="col-sm-2" id="debug"></div>
-      <div class="col-sm-2" id="trace"></div>
-      <div class="col-sm-2" id="output"></div>
+      <div class="col-sm-2" id="mem"><br></div>
+      <div class="col-sm-2" id="debug"><br></div>
+      <div class="col-sm-2" id="trace"><br></div>
+      <div class="col-sm-2" id="output"><br></div>
       </div>
     </div> 
     
+    </div>
   </body>
 </html>

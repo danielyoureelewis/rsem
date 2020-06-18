@@ -3,6 +3,18 @@
 var editor
 function initialize(){
     editor = ace.edit("editor");
+    editor.setValue("; RSC Emulator Example"+"\n"+
+                    "JMP start"+"\n"+
+                    "; Variables"+"\n"+
+                    "var1: 32"+"\n"+
+                    "var2: 33"+"\n"+
+                    "start:       ; the label 'start'. The jump statement earlier jumps here"+"\n"+
+                    "LDAC var1 ; Load the first variable into Accumulator"+"\n"+
+                    "MVAC     ; Move the contents of Accumulator to R"+"\n"+
+                    "LDAC var2 ; Load the second variable into Accumulator"+"\n"+
+                    "ADD       ; Add Accumulator and R, move result into Accumulator"+"\n"+
+                    "OUT       ; Send Accumulator contents to Output Register"+"\n"+
+                    "HALT      ; Stop execution"+"\n");
 }
 
 function copyDivToClipboard() {
@@ -173,7 +185,7 @@ function assemble(){
         return mem;
     }
     //clear display 
-    prepare_display();
+    //prepare_display();
     //process asm
     asm = translate(sanitize(read()));
     //if error return empty list
@@ -206,13 +218,12 @@ const ins = {
 };
 
 
-//print the value of each register
 let rsc = {
     code : [],
     stepcnt : 0,
     codelen : 0,
     stopped : 0,
-
+    state : [],
     //create registers
     component : {
         AR : 0,
@@ -226,8 +237,10 @@ let rsc = {
         Z : 0,
         SC : 0,
         M : [],
+        //record of how we got to this state
+        trace : [],
     },
-
+    //loads code into memory 
     load : function(input){
         this.code = Array.from(input);
         if(this.code.length){
@@ -235,8 +248,9 @@ let rsc = {
         }else{
             this.disable_copy();
         }
+        this.flush_output(this);
     },
-    
+    //resets the machine
     reset : function(){
         this.reset_trace();
         this.component.AR = 0;
@@ -260,74 +274,77 @@ let rsc = {
             this.enable_asm();
         }
     },
-
+    //enables all buttons
     enable_run : function() {
+        document.getElementById("previns").disabled = false;
+        document.getElementById("prevstep").disabled = false;
         document.getElementById("ins").disabled = false;
         document.getElementById("tstep").disabled = false;
         document.getElementById("run").disabled = false;
         document.getElementById("stop").disabled = false;
     },
-
+    //enables buttons for assembling and copying code
     enable_asm : function() {
         document.getElementById("asm").disabled = false;
         document.getElementById("copy").disabled = false;
     },
-    
+    //disables buttons for forward progress
     disable_run : function() { 
         document.getElementById("ins").disabled = true;
         document.getElementById("tstep").disabled = true;
         document.getElementById("run").disabled = true;
     },
-
+    //disables the stop button
     disable_stop : function() {
         document.getElementById("stop").disabled = true;
     },
-
+    //disables buttons for assembling and copying code
     disable_asm : function() {
         document.getElementById("asm").disabled = true;
         document.getElementById("copy").disabled = true;
     },
-
+    //disables only the copy button
     disable_copy : function() {
         document.getElementById("copy").disabled = true;
     },
-
+    //stop button - for run away code
     _stop : function() {
         this.stopped = 1;
     },
-
+    //resets the output
     reset_output : function() {
         document.getElementById('output').innerHTML = ''        
     },
-    
+    //prints the value in each register
     print_debug : function() {
         document.getElementById('debug').innerHTML =
             'REGISTERS:<br>' +
-            'AR   = ' + this.component.AR.toString(16) + '<br>' +
-            'IR   = ' + this.component.IR.toString(16) + '<br>' +
-            'OUTR = ' + this.component.OUTR.toString(16) + '<br>' +
-            'DR   = ' + this.component.DR.toString(16) + '<br>' + 
-            'R    = ' + this.component.R.toString(16) + '<br>' +
-            'ACC  = ' + this.component.ACC.toString(16) + '<br>' +
-            'PC   = ' + this.component.PC.toString(16) + '<br>' +
-            'S    = ' + this.component.S.toString(16) + '<br>' +
-            'Z    = ' + this.component.Z.toString(16) + '<br>' +
-            'SC   = ' + this.component.SC.toString(16) + '<br>';
+            'AR&nbsp;&nbsp;&nbsp;=  ' + this.component.AR.toString(16) + '<br>' +
+            'IR&nbsp;&nbsp;&nbsp;= ' + this.component.IR.toString(16) + '<br>' +
+            'OUTR&nbsp;= ' + this.component.OUTR.toString(16) + '<br>' +
+            'DR&nbsp;&nbsp;&nbsp;= ' + this.component.DR.toString(16) + '<br>' + 
+            'R&nbsp;&nbsp;&nbsp;&nbsp;= ' + this.component.R.toString(16) + '<br>' +
+            'ACC&nbsp;&nbsp;= ' + this.component.ACC.toString(16) + '<br>' +
+            'PC&nbsp;&nbsp;&nbsp;= ' + this.component.PC.toString(16) + '<br>' +
+            'S&nbsp;&nbsp;&nbsp;&nbsp;= ' + this.component.S.toString(16) + '<br>' +
+            'Z&nbsp;&nbsp;&nbsp;&nbsp;= ' + this.component.Z.toString(16) + '<br>' +
+            'SC&nbsp;&nbsp;&nbsp;= ' + this.component.SC.toString(16) + '<br>';
     },
-
+    //record of which instructions led us to this state
     add_to_trace : function(elem){
-        let trace = document.getElementById('trace').innerHTML;
-        if(trace == ''){
-            document.getElementById('trace').innerHTML = 'TRACE:<br>' + elem + '<br>';
-        }else{
-            document.getElementById('trace').innerHTML += elem + '<br>';
-        }
+        this.component.trace.push(elem);
     },
-
+    //resets the trace
     reset_trace : function(){
+        this.component.trace = [];
         document.getElementById('trace').innerHTML = 'TRACE:<br>';
     },
-
+    //prints the trace
+    display_trace : function(){
+        document.getElementById('trace').innerHTML = 'TRACE:<br>';
+        this.component.trace.forEach(function(elem) {document.getElementById('trace').innerHTML += elem + '<br>'});
+    },
+    //dumps a list of what is in memory
     dump_mem : function(){
         let mem = document.getElementById('mem').innerHTML;
         document.getElementById('mem').innerHTML = 'MEMORY:<br>';
@@ -337,7 +354,7 @@ let rsc = {
             document.getElementById('pos').innerHTML += i + ':<br>';
         });
     },
-    
+    //one tick of the clock
     T : function(){
         switch(this.component.SC){
         case 0:
@@ -371,7 +388,6 @@ let rsc = {
             case 3:
                 this.add_to_trace("LDAC");
                 this.component.DR = this.component.M[this.component.PC];
-                this.component.PC++;
                 break;
             case 4:
                 this.component.AR = this.component.DR;
@@ -609,7 +625,6 @@ let rsc = {
         }
         this.component.SC++;
     },
-    
     //should be called each time ACC is modified
     setZ : function() {
         if(this.component.ACC == 0){
@@ -619,65 +634,94 @@ let rsc = {
             this.component.Z = 0;
         }
     },
-    
-    //increment to next T
-    _step : function(){
-        if(!this.stepcnt){
-            //load
-            this.component.M = Array.from(this.code);
-            //remember the length of the original code
-            this.codelen = this.component.M.length;
+    //print to output
+    flush_output : function(rsc){
+        if(rsc.component.S == 1){
+            rsc.disable_run();
+            rsc.disable_stop();
         }
-        this.stepcnt++;
-        this.T();
+        rsc.print_debug();
+        rsc.dump_mem();
+        rsc.display_trace();
+        document.getElementById('output').innerHTML = 'OUTPUT:<br>' + rsc.component.OUTR.toString(16);
+    }
+}
+
+let control = {
+    //control and helper functions
+    run : function(rsc) {
+        rsc.disable_run();
+        rsc.stopped = 0;
+        control._run(rsc);
+    },
+    ins : function(rsc) {
+        control._ins(rsc);
+    },
+    prev_ins : function(rsc) {
+        control._prev_ins(rsc);
+    },
+    step : function(rsc) {
+        control._step(rsc);
+        rsc.stepcnt++;
+    },
+    prev_step : function(rsc) {
+        rsc.stepcnt--;
+        control._step(rsc);
+    },
+    stop : function(rsc){
+        rsc.enable_asm();
+        rsc.enable_run();
+        control._stop(rsc);
+    },
+    //step to next state
+    _step : function(rsc){
+        rsc.flush_output(rsc);
+        //first step
+        if(!rsc.stepcnt){
+            //load
+            rsc.component.M = Array.from(rsc.code);
+            //remember the length of the original code
+            rsc.codelen = rsc.component.M.length;
+        }
+        //going backwards
+        if(rsc.stepcnt < rsc.state.length){
+            rsc.component = rsc.state[rsc.stepcnt];
+            rsc.enable_run();
+        }
+        //going forwards
+        else{
+            console.log(rsc.component);
+            rsc.state.push(JSON.parse(JSON.stringify(rsc.component)));
+            rsc.T();
+        }
+        rsc.flush_output(rsc);
     },
     //execute next instruction
-    _ins : function(){
+    _ins : function(rsc){
         let complete = 0
-        while(!complete){
-            this.step();
-            if(this.component.SC == 0){
-                complete = 1;
-            }
+        rsc.stepcnt++;
+        control._step(rsc);
+        while(rsc.component.SC != 0){
+            rsc.stepcnt++;
+            control._step(rsc);
+        }
+    },
+    //execute next instruction
+    _prev_ins : function(rsc){
+        let complete = 0
+        rsc.stepcnt--;
+        control._step(rsc);
+        while(rsc.component.SC != 0){
+            rsc.stepcnt--;
+            control._step(rsc);
         }
     },
     //run until HALT
     _run : function(rsc){
         if(!rsc.component.S && !rsc.stopped) {
-            rsc._step();
-            setTimeout(rsc._run, 0, rsc);
-            rsc.flush_output();
+            control.step(rsc);
+            setTimeout(control._run, 0, rsc);
         }
-    },
-    //print to output
-    flush_output : function(){
-        if(this.component.S == 1){
-            this.disable_run();
-            this.disable_stop();
-        }
-        this.print_debug();
-        this.dump_mem();
-        document.getElementById('output').innerHTML = 'OUTPUT:<br>' + this.component.OUTR.toString(16);
-    },
-    //rsc functions
-    run : function() {
-        this.disable_run();
-        this.stopped = 0;
-        this._run(this);
-    },
-    ins : function() {
-        this._ins();
-        this.flush_output();
-        
-    },
-    step : function() {
-        this._step();
-        this.flush_output();        
-    },
-    stop : function(){
-        this.enable_asm();
-        this.enable_run();
-        this._stop();
     }
 }
 
