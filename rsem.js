@@ -1,6 +1,7 @@
 //Daniel Lewis 2020
 'use strict';
 var editor
+var asm
 function initialize(){
     editor = ace.edit("editor");
     editor.setValue("; RSC Emulator Example"+"\n"+
@@ -100,14 +101,15 @@ function assemble(){
         document.getElementById('pos').innerHTML = 'N:<br>';
         document.getElementById('code').innerHTML = '';
         code.forEach((line, index) => {
-            document.getElementById('pos').innerHTML += index + ':<br> ';
+            document.getElementById('pos').innerHTML += index.toString(16) + ':<br> ';
             document.getElementById('code').innerHTML += pad(line.toString(16),8) + '<br>';
         });
     }
 
     function prepare_display(){
-        document.getElementById('display').innerHTML = '';
-        document.getElementById('display').innerHTML = '<div class="col-sm-1" id="pos"></div><div class="col-sm-2" id="codeTitle"><div id="code"></div></div><div class="col-sm-2" id="mem"></div><div class="col-sm-2" id="debug"></div><div class="col-sm-2" id="trace"></div><div class="col-sm-2" id="output"></div>'
+	
+        // document.getElementById('display').innerHTML = '';
+        // document.getElementById('display').innerHTML = '<div class="col-sm-1" id="pos"></div><div class="col-sm-2" id="codeTitle"><div id="code"></div></div><div class="col-sm-2" id="mem"></div><div class="col-sm-2" id="debug"></div><div class="col-sm-2" id="trace"></div><div class="col-sm-2" id="output"></div>'
     }
     
     //translate assembly to opcodes and data
@@ -185,7 +187,7 @@ function assemble(){
         return mem;
     }
     //clear display 
-    //prepare_display();
+    prepare_display();
     //process asm
     asm = translate(sanitize(read()));
     //if error return empty list
@@ -351,7 +353,7 @@ let rsc = {
         document.getElementById('pos').innerHTML = 'N:<br>';
         this.component.M.forEach((x, i) => {
             document.getElementById('mem').innerHTML += pad(x.toString(16),8) + '<br>';
-            document.getElementById('pos').innerHTML += i + ':<br>';
+            document.getElementById('pos').innerHTML += i.toString(16) + ':<br>';
         });
     },
     //one tick of the clock
@@ -724,4 +726,3 @@ let control = {
         }
     }
 }
-
