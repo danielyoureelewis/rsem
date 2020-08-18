@@ -387,7 +387,7 @@ let rsc = {
             switch(this.component.SC){
             case 3:
                 this.add_to_trace("LDAC");
-                this.component.DR = this.component.M[this.component.PC];
+                this.component.DR = this.component.M[this.component.PC++];
                 break;
             case 4:
                 this.component.AR = this.component.DR;
