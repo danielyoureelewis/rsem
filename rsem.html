@@ -1,11 +1,11 @@
 <html lang="en">
   <head>
-    <title>RSC.js</title>
+    <title>CSCI 3130 - Relatively Simple Emulator (RSE)</title>
     <link rel="stylesheet" href="rsem.css">
     <link rel="stylesheet" href="bootstrap-4.4.1-dist/css/bootstrap.min.css">
     <script src=rsem.js></script>
-
-</head>
+    
+  </head>
   <body class="body">
     <div id="editor"></div>
     <script onload="initialize()" src="ace-builds-master/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
@@ -19,18 +19,19 @@
       <button type="button" class="btn btn-outline-primary mybtn" id="run" onclick="control.run(rsc)" disabled>Run</button>
       <button type="button" class="btn btn-outline-primary mybtn" id="stop" onclick="control.stop(rsc)" disabled>Stop</button>
 
-    <div id="display" class="display row">
-      <div class="col-sm-1" id="pos"><br></div>
-      <div class="col-sm-2" id="codeTitle">
-        <div id="code"><br></div>
+      <div id="display" class="display row">
+	<div class="col-sm-1" id="pos"><br></div>
+	<div class="col-sm-2" id="codeTitle">
+          <div id="code"><br></div>
+	</div>
+	<div class="col-sm-2" id="mem"><br></div>
+	<div class="col-sm-3" id="debug"><br></div>
+	<div class="col-sm-1" id="trace"><br></div>
+	<div class="col-sm-1" id="output"><br></div>
       </div>
-      <div class="col-sm-2" id="mem"><br></div>
-      <div class="col-sm-2" id="debug"><br></div>
-      <div class="col-sm-2" id="trace"><br></div>
-      <div class="col-sm-2" id="output"><br></div>
-      </div>
-    </div> 
-    
     </div>
+    
+    <script>
+    </script>
   </body>
 </html>
