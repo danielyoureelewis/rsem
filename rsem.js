@@ -70,7 +70,7 @@ function assemble(){
     //returns a list delimited by newline
     function sanitize(raw){
         //remove comments and turn tabs to spaces
-        let asmNoComment = raw.replace(/;.*\n/g, '\n').replace(/\t/g, ' ');
+        let asmNoComment = raw.replace(/\r/g,'').replace(/\t/g, ' ').replace(/;.*\n/g, '\n');
 
         //find and remove empty lines
         let asmLines = asmNoComment.split('\n');
