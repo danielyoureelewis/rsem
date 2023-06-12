@@ -1,6 +1,7 @@
 //Daniel Lewis 2020
 'use strict';
 var editor
+var asm
 function initialize(){
     editor = ace.edit("editor");
     editor.setValue("; RSC Emulator Example"+"\n"+
@@ -25,11 +26,6 @@ function copyDivToClipboard() {
     document.execCommand("copy");
     window.getSelection().removeAllRanges();// to deselect
 }
-
-//https://stackoverflow.com/questions/10073699/pad-a-number-with-leading-zeros-in-javascript
-function pad(n, width=8, z=0) {
-    return (String(z).repeat(width) + String(n)).slice(String(n).length)
-} 
 
 function assemble(){
     const instruction = {
@@ -74,7 +70,7 @@ function assemble(){
     //returns a list delimited by newline
     function sanitize(raw){
         //remove comments and turn tabs to spaces
-        let asmNoComment = raw.replace(/;.*\n/g, '\n').replace(/\t/g, ' ');
+        let asmNoComment = raw.replace(/\r/g,'').replace(/\t/g, ' ').replace(/;.*\n/g, '\n');
 
         //find and remove empty lines
         let asmLines = asmNoComment.split('\n');
@@ -100,14 +96,15 @@ function assemble(){
         document.getElementById('pos').innerHTML = 'N:<br>';
         document.getElementById('code').innerHTML = '';
         code.forEach((line, index) => {
-            document.getElementById('pos').innerHTML += index + ':<br> ';
-            document.getElementById('code').innerHTML += pad(line.toString(16),8) + '<br>';
+            document.getElementById('pos').innerHTML += index.toString(16).padStart(4,'0') + ':<br> ';
+            document.getElementById('code').innerHTML += (line>>>0).toString(16).padStart(8,'0') + '<br>';
         });
     }
 
     function prepare_display(){
-        document.getElementById('display').innerHTML = '';
-        document.getElementById('display').innerHTML = '<div class="col-sm-1" id="pos"></div><div class="col-sm-2" id="codeTitle"><div id="code"></div></div><div class="col-sm-2" id="mem"></div><div class="col-sm-2" id="debug"></div><div class="col-sm-2" id="trace"></div><div class="col-sm-2" id="output"></div>'
+	
+        // document.getElementById('display').innerHTML = '';
+        // document.getElementById('display').innerHTML = '<div class="col-sm-1" id="pos"></div><div class="col-sm-2" id="codeTitle"><div id="code"></div></div><div class="col-sm-2" id="mem"></div><div class="col-sm-2" id="debug"></div><div class="col-sm-2" id="trace"></div><div class="col-sm-2" id="output"></div>'
     }
     
     //translate assembly to opcodes and data
@@ -119,7 +116,7 @@ function assemble(){
         let error = 0;
         asm.forEach((x, index) => {
             //this fixes the case that labels are not in this form label: N and splits lines on whitespacep
-            let line = x.replace(/\s\s+:/g, ': ').split(' ');            
+            let line = x.trim().replace(/\s\s+:/g, ': ').split(' ');            
             //either first element in the line is a lable or an instruction
             //line is an instruction
             if(line[0] in instruction){
@@ -185,7 +182,7 @@ function assemble(){
         return mem;
     }
     //clear display 
-    //prepare_display();
+    prepare_display();
     //process asm
     asm = translate(sanitize(read()));
     //if error return empty list
@@ -319,13 +316,13 @@ let rsc = {
     print_debug : function() {
         document.getElementById('debug').innerHTML =
             'REGISTERS:<br>' +
-            'AR&nbsp;&nbsp;&nbsp;=  ' + this.component.AR.toString(16) + '<br>' +
-            'IR&nbsp;&nbsp;&nbsp;= ' + this.component.IR.toString(16) + '<br>' +
-            'OUTR&nbsp;= ' + this.component.OUTR.toString(16) + '<br>' +
-            'DR&nbsp;&nbsp;&nbsp;= ' + this.component.DR.toString(16) + '<br>' + 
-            'R&nbsp;&nbsp;&nbsp;&nbsp;= ' + this.component.R.toString(16) + '<br>' +
-            'ACC&nbsp;&nbsp;= ' + this.component.ACC.toString(16) + '<br>' +
-            'PC&nbsp;&nbsp;&nbsp;= ' + this.component.PC.toString(16) + '<br>' +
+            'AR&nbsp;&nbsp;&nbsp;=  ' + (this.component.AR>>>0).toString(16).padStart(8,'0') + '<br>' +
+            'IR&nbsp;&nbsp;&nbsp;= ' + (this.component.IR>>>0).toString(16).padStart(8,'0') + '<br>' +
+            'OUTR&nbsp;= ' + (this.component.OUTR>>>0).toString(16).padStart(8,'0') + '<br>' +
+            'DR&nbsp;&nbsp;&nbsp;= ' + (this.component.DR>>>0).toString(16).padStart(8,'0') + '<br>' + 
+            'R&nbsp;&nbsp;&nbsp;&nbsp;= ' + (this.component.R>>>0).toString(16).padStart(8,'0') + '<br>' +
+            'ACC&nbsp;&nbsp;= ' + (this.component.ACC>>>0).toString(16).padStart(8,'0') + '<br>' +
+            'PC&nbsp;&nbsp;&nbsp;= ' + (this.component.PC>>>0).toString(16).padStart(8,'0') + '<br>' +
             'S&nbsp;&nbsp;&nbsp;&nbsp;= ' + this.component.S.toString(16) + '<br>' +
             'Z&nbsp;&nbsp;&nbsp;&nbsp;= ' + this.component.Z.toString(16) + '<br>' +
             'SC&nbsp;&nbsp;&nbsp;= ' + this.component.SC.toString(16) + '<br>';
@@ -350,8 +347,8 @@ let rsc = {
         document.getElementById('mem').innerHTML = 'MEMORY:<br>';
         document.getElementById('pos').innerHTML = 'N:<br>';
         this.component.M.forEach((x, i) => {
-            document.getElementById('mem').innerHTML += pad(x.toString(16),8) + '<br>';
-            document.getElementById('pos').innerHTML += i + ':<br>';
+            document.getElementById('mem').innerHTML += (x>>>0).toString(16).padStart(8,'0') + '<br>';
+            document.getElementById('pos').innerHTML += i.toString(16).padStart(4,'0') + ':<br>';
         });
     },
     //one tick of the clock
@@ -387,7 +384,7 @@ let rsc = {
             switch(this.component.SC){
             case 3:
                 this.add_to_trace("LDAC");
-                this.component.DR = this.component.M[this.component.PC];
+                this.component.DR = this.component.M[this.component.PC++];
                 break;
             case 4:
                 this.component.AR = this.component.DR;
@@ -643,7 +640,7 @@ let rsc = {
         rsc.print_debug();
         rsc.dump_mem();
         rsc.display_trace();
-        document.getElementById('output').innerHTML = 'OUTPUT:<br>' + rsc.component.OUTR.toString(16);
+        document.getElementById('output').innerHTML = 'OUTPUT:<br>' + (rsc.component.OUTR>>>0).toString(16).padStart(8,'0');
     }
 }
 
@@ -724,4 +721,3 @@ let control = {
         }
     }
 }
-
